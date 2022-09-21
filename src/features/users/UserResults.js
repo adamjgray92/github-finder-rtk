@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { SpinnerDotted } from 'spinners-react';
+import UserItem from './UserItem';
 
 import { getUsers, getUsersStatus } from './usersSlice';
 
@@ -13,9 +14,9 @@ const UserResults = () => {
   }
 
   return (
-    <div className='grid grid-cols-8 gap-8 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2'>
+    <div className='grid grid-cols-1 gap-8 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2'>
       {users.map((user) => (
-        <div>{user.login}</div>
+        <UserItem key={user.id} name={user.login} avatarUrl={user.avatar_url} />
       ))}
     </div>
   );
