@@ -1,15 +1,10 @@
 import { useEffect } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaCodepen, FaStore, FaUserFriends, FaUsers } from 'react-icons/fa';
 import { SpinnerDotted } from 'spinners-react';
 
-import {
-  fetchUser,
-  fetchUserRepos,
-  getUser,
-  getUserStatus,
-} from './usersSlice';
+import { fetchUser, getUser, getUserStatus } from './usersSlice';
 import UserRepoList from './UserRepoList';
 
 const User = () => {
@@ -21,7 +16,6 @@ const User = () => {
   useEffect(() => {
     if (username) {
       dispatch(fetchUser(username));
-      dispatch(fetchUserRepos(username));
     }
   }, [username, dispatch]);
 

@@ -1,7 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const USERS_URL = `${process.env.REACT_APP_GITHUB_URL}`;
+const GITHUB_URL = `${process.env.REACT_APP_GITHUB_URL}`;
+
+const githubAPI = axios.create({
+  baseURL: GITHUB_URL,
+  headers: {
+    Authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`,
+  },
+});
 
 const initialState = {
   users: [],
@@ -16,14 +23,8 @@ export const searchUsers = createAsyncThunk(
   'users/searchUsers',
   async (search) => {
     try {
-      const response = await axios.get(
-        `${USERS_URL}/search/users?q=${search}`,
-        {
-          headers: {
-            Authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`,
-          },
-        }
-      );
+      const response = await githubAPI.get(`/search/users?q=${search}`);
+
       return response.data.items;
     } catch (err) {
       return err.message;
@@ -33,44 +34,17 @@ export const searchUsers = createAsyncThunk(
 
 export const fetchUser = createAsyncThunk(
   'users/fetchUser',
-  async (username, { rejectWithValue }) => {
+  async (username) => {
     try {
-      const response = await axios.get(`${USERS_URL}/users/${username}`, {
-        headers: {
-          Authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`,
-        },
-      });
-      console.log(response);
-      return response.data;
-    } catch (err) {
-      if (!err.response) {
-        throw err;
-      }
-      return rejectWithValue(err.response.data);
-    }
-  }
-);
+      const params = new URLSearchParams({ sort: 'created', per_page: 10 });
+      const [user, repos] = await Promise.all([
+        githubAPI.get(`/users/${username}`),
+        githubAPI.get(`/users/${username}/repos?${params}`),
+      ]);
 
-export const fetchUserRepos = createAsyncThunk(
-  'users/fetchUserRepos',
-  async (username, { rejectWithValue }) => {
-    const params = new URLSearchParams({ sort: 'created', per_page: 10 });
-    try {
-      const response = await axios.get(
-        `${USERS_URL}/users/${username}/repos?${params}`,
-        {
-          headers: {
-            Authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`,
-          },
-        }
-      );
-      return response.data;
+      return { user: user.data, repos: repos.data };
     } catch (err) {
-      if (!err.response) {
-        throw err;
-      }
-
-      return rejectWithValue(err.response.data);
+      return err.message;
     }
   }
 );
@@ -97,19 +71,13 @@ const usersSlice = createSlice({
       state.user = null;
     });
     builder.addCase(fetchUser.fulfilled, (state, action) => {
+      const { user, repos } = action.payload;
       state.userStatus = 'succeeded';
-      state.user = action.payload;
+      state.user = user;
+      state.repos = repos;
     });
     builder.addCase(fetchUser.rejected, (state, action) => {
       state.userStatus = 'failed';
-    });
-    builder.addCase(fetchUserRepos.pending, (state, action) => {
-      state.repoStatus = 'loading';
-      state.repos = [];
-    });
-    builder.addCase(fetchUserRepos.fulfilled, (state, action) => {
-      state.repoStatus = 'succeeded';
-      state.repos = action.payload;
     });
   },
 });
