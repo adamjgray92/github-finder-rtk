@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaCodepen, FaStore, FaUserFriends, FaUsers } from 'react-icons/fa';
 import { SpinnerDotted } from 'spinners-react';
@@ -10,18 +10,27 @@ import UserRepoList from './UserRepoList';
 const User = () => {
   const dispatch = useDispatch();
   const { username } = useParams();
+  const navigate = useNavigate();
   const status = useSelector(getUserStatus);
   const user = useSelector(getUser);
 
   useEffect(() => {
     if (username) {
-      dispatch(fetchUser(username));
+      dispatch(fetchUser(username))
+        .unwrap()
+        .catch(() => {
+          navigate('/');
+        });
     }
-  }, [username, dispatch]);
+  }, [username, dispatch, navigate]);
 
   if (status === 'loading') {
     <SpinnerDotted />;
   }
+
+  const websiteUrl = user?.blog.startsWith('http')
+    ? user?.blog
+    : 'https://' + user?.blog;
 
   return (
     <div className='w-full mx-auto lg:w-10/12'>
@@ -34,11 +43,11 @@ const User = () => {
         <div className='custom-card-image mb-6 md:mb-0'>
           <div className='rounded-lg shadow-xl card image-full'>
             <figure>
-              <img src={user?.avatar_url} alt='' />
+              <img src={user?.avatar_url} alt={user?.login} />
             </figure>
             <div className='card-body justify-end'>
               <h2 className='card-title mb-0'>{user?.name}</h2>
-              <p>{user?.login}</p>
+              <p className='flex-grow-0'>{user?.login}</p>
             </div>
           </div>
         </div>
@@ -74,11 +83,7 @@ const User = () => {
               <div className='stat'>
                 <div className='stat-title text-md'>Website</div>
                 <div className='text-lg stat-value'>
-                  <a
-                    href={`https://${user?.blog}`}
-                    target='_blank'
-                    rel='noreferrer'
-                  >
+                  <a href={websiteUrl} target='_blank' rel='noreferrer'>
                     {user?.blog}
                   </a>
                 </div>

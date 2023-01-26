@@ -7,6 +7,7 @@ import { getUsers, searchUsers, clearUsers } from './usersSlice';
 const UserSearch = () => {
   const dispatch = useDispatch();
   const [search, setSearch] = useState('');
+  const [error, setError] = useState(null);
 
   const users = useSelector(getUsers);
 
@@ -16,11 +17,14 @@ const UserSearch = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError(null);
 
     if (search === '') {
       dispatch(setAlert({ message: 'Please enter something', type: 'error' }));
     } else {
-      dispatch(searchUsers(search));
+      dispatch(searchUsers(search))
+        .unwrap()
+        .catch(() => setError('Something went wrong!'));
       setSearch('');
     }
   };
@@ -46,6 +50,7 @@ const UserSearch = () => {
               </button>
             </div>
           </div>
+          {error ? <div className='mt-2 ml-5 text-red-500'>{error}</div> : null}
         </form>
       </div>
       {users.length > 0 && (

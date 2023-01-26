@@ -5,9 +5,9 @@ const GITHUB_URL = `${process.env.REACT_APP_GITHUB_URL}`;
 
 const githubAPI = axios.create({
   baseURL: GITHUB_URL,
-  headers: {
-    Authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`,
-  },
+  // headers: {
+  //   Authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`,
+  // },
 });
 
 const initialState = {
@@ -21,20 +21,20 @@ const initialState = {
 
 export const searchUsers = createAsyncThunk(
   'users/searchUsers',
-  async (search) => {
+  async (search, { rejectWithValue }) => {
     try {
       const response = await githubAPI.get(`/search/users?q=${search}`);
 
       return response.data.items;
     } catch (err) {
-      return err.message;
+      return rejectWithValue(err.message);
     }
   }
 );
 
 export const fetchUser = createAsyncThunk(
   'users/fetchUser',
-  async (username) => {
+  async (username, { rejectWithValue }) => {
     try {
       const params = new URLSearchParams({ sort: 'created', per_page: 10 });
       const [user, repos] = await Promise.all([
@@ -44,7 +44,7 @@ export const fetchUser = createAsyncThunk(
 
       return { user: user.data, repos: repos.data };
     } catch (err) {
-      return err.message;
+      return rejectWithValue(err.message);
     }
   }
 );
@@ -65,6 +65,10 @@ const usersSlice = createSlice({
     builder.addCase(searchUsers.fulfilled, (state, action) => {
       state.status = 'succeeded';
       state.users = state.users.concat(action.payload);
+    });
+    builder.addCase(searchUsers.rejected, (state, action) => {
+      state.status = 'failed';
+      state.users = [];
     });
     builder.addCase(fetchUser.pending, (state, action) => {
       state.userStatus = 'loading';
